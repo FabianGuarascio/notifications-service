@@ -1,51 +1,40 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Notification } from './entities/notification.entity';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 
-export interface Notification {
-  id: number;
-  type: 'email' | 'sms' | 'push';
-  recipient: string;
-  message: string;
-  read: boolean;
-  createdAt: Date;
-}
-
 @Injectable()
 export class NotificationsService {
-  private readonly store: Notification[] = [];
-  private nextId = 1;
+  constructor(
+    @InjectRepository(Notification)
+    private readonly repo: Repository<Notification>,
+  ) {}
 
-  create(dto: CreateNotificationDto): Notification {
-    const notification: Notification = {
-      id: this.nextId++,
-      ...dto,
-      read: false,
-      createdAt: new Date(),
-    };
-    this.store.push(notification);
-    return notification;
+  create(dto: CreateNotificationDto): Promise<Notification> {
+    const notification = this.repo.create({ ...dto, read: false });
+    return this.repo.save(notification);
   }
 
-  findAll(): Notification[] {
-    return this.store;
+  findAll(): Promise<Notification[]> {
+    return this.repo.find();
   }
 
-  findOne(id: number): Notification {
-    const notification = this.store.find((n) => n.id === id);
+  async findOne(id: number): Promise<Notification> {
+    const notification = await this.repo.findOneBy({ id });
     if (!notification) throw new NotFoundException(`Notification #${id} not found`);
     return notification;
   }
 
-  update(id: number, dto: UpdateNotificationDto): Notification {
-    const notification = this.findOne(id);
+  async update(id: number, dto: UpdateNotificationDto): Promise<Notification> {
+    const notification = await this.findOne(id);
     Object.assign(notification, dto);
-    return notification;
+    return this.repo.save(notification);
   }
 
-  remove(id: number): void {
-    const index = this.store.findIndex((n) => n.id === id);
-    if (index === -1) throw new NotFoundException(`Notification #${id} not found`);
-    this.store.splice(index, 1);
+  async remove(id: number): Promise<void> {
+    const notification = await this.findOne(id);
+    await this.repo.remove(notification);
   }
 }

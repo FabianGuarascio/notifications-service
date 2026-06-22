@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
@@ -31,5 +31,23 @@ export class NotificationsController {
   @MessagePattern('removeNotification')
   remove(@Payload() id: number) {
     return this.notificationsService.remove(id);
+  }
+
+  @EventPattern('movie.created')
+  handleMovieCreated(@Payload() movie: { id: number; title: string }) {
+    return this.notificationsService.create({
+      type: 'push',
+      recipient: 'all',
+      message: `New movie added: ${movie.title}`,
+    });
+  }
+
+  @EventPattern('rating.added')
+  handleRatingAdded(@Payload() data: { movieId: number; score: number }) {
+    return this.notificationsService.create({
+      type: 'push',
+      recipient: 'all',
+      message: `New rating ${data.score} added for movie #${data.movieId}`,
+    });
   }
 }
