@@ -15,7 +15,7 @@ import { Notification } from './entities/notification.entity';
         options: {
           client: {
             clientId: 'notifications-service-producer',
-            brokers: ['localhost:9092'],
+            brokers: (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(','),
           },
         },
       },

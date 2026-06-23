@@ -7,7 +7,7 @@ import { Notification } from './notifications/entities/notification.entity';
   imports: [
     TypeOrmModule.forRoot({
       type: 'better-sqlite3',
-      database: 'notifications.db',
+      database: process.env.DB_PATH ?? 'notifications.db',
       entities: [Notification],
       synchronize: true,
     }),
